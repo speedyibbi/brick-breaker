@@ -12,7 +12,9 @@ main proc
 call setVideoMode
 call setBackgroundColor
 
-
+mov cx, 270
+mov dx, 150
+call drawBrick
 
 jmp exit
 main endp
