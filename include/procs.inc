@@ -188,3 +188,6 @@ pop bx
 skipDrawRectangle:
 ret
 drawRectangle endp
+
+test proc
+endp
