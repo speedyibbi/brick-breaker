@@ -16,6 +16,23 @@ int 10h
 ret
 setBackgroundColor endp
 
+; parameters = bh: upper-limit, bl: lower-limit
+; return value in stack
+generateRandomNumber proc uses ax bx dx
+randomNumber:
+mov ah, 00h
+int 1ah
+cmp dl, bh
+ja randomNumber
+cmp dl, bl
+jb randomNumber
+mov dh, 0
+pop bx
+push dx
+push bx
+ret
+generateRandomNumber endp
+
 clearScreen proc uses ax bx cx dx
 ; call setVideoMode
 ; call setBackgroundColor
@@ -188,6 +205,3 @@ pop bx
 skipDrawRectangle:
 ret
 drawRectangle endp
-
-test proc
-endp

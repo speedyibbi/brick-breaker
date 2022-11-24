@@ -7,8 +7,8 @@ pixelColor db 0dh
 
 brickWidth db 20d
 brickHeight db 10d
-brickColor db 04h
-brickOutlineColor db 00h
 brickLayerCount db 14d
+brickOutlineColor db 00h
+brickColor db 04h
 
 levelOneLayers db 7d
