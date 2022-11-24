@@ -9,3 +9,6 @@ brickWidth db 20d
 brickHeight db 10d
 brickColor db 04h
 brickOutlineColor db 00h
+brickLayerCount db 14d
+
+levelOneLayers db 7d
