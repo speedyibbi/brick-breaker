@@ -17,8 +17,8 @@ ret
 setBackgroundColor endp
 
 ; parameters = bh: upper-limit, bl: lower-limit
-; return value in stack
-generateRandomNumber proc uses ax bx dx
+; return value in bx
+generateRandomNumber proc uses ax cx dx
 randomNumber:
 mov ah, 00h
 int 1ah
@@ -27,9 +27,7 @@ ja randomNumber
 cmp dl, bl
 jb randomNumber
 mov dh, 0
-pop bx
-push dx
-push bx
+mov bx, dx
 ret
 generateRandomNumber endp
 
@@ -63,6 +61,70 @@ ret
 clearScreen endp
 
 ; parameters = cx: x-coordinate, dx: y-coordinate
+enablePad proc uses ax bx cx dx
+call drawPad
+mov ax, windowWidth
+mov bh, 0
+mov bl, padWidth
+sub ax, bx
+mov bx, ax
+CheckKeys:
+mov ah, 00
+cmp ah, 0
+int 16h
+jnz CheckKeys
+cmp ah, 77
+je drawRight
+cmp ah, 75
+je drawLeft
+cmp ah, 1
+je exit
+jmp CheckKeys
+drawRight:
+call clearPad
+mov ah, 0
+mov al, padSpeed
+add cx, ax
+cmp cx, bx
+ja setToMax
+call drawPad
+jmp CheckKeys
+drawLeft:
+call clearPad
+mov ah, 0
+mov al, padSpeed
+sub cx, ax
+cmp cx, bx
+ja setToMin
+call drawPad
+jmp CheckKeys
+setToMax:
+mov cx, bx
+call drawPad
+jmp CheckKeys
+setToMin:
+mov cx, 0
+call drawPad
+jmp CheckKeys
+ret
+enablePad endp
+
+; parameters = cx: x-coordinate, dx: y-coordinate
+clearPad proc uses ax bx cx dx
+mov ah, 0ch
+mov al, backgroundColor
+mov bh, padWidth
+mov bl, padHeight
+cmp bh, 0
+je skipClearPad
+cmp bl, 0
+je skipClearPad
+call drawRectangle
+skipClearPad:
+ret
+clearPad endp
+
+; parameters = cx: x-coordinate, dx: y-coordinate
 drawPad proc uses ax bx cx dx
 mov ah, 0ch
 mov al, padOutlineColor
@@ -89,6 +151,7 @@ skipDrawPad:
 ret
 drawPad endp
 
+; parameters = cx: x-coordinate, dx: y-coordinate
 drawLevelOneLayers proc uses ax bx dx
 mov ah, 0
 mov al, brickHeight
@@ -145,8 +208,31 @@ call drawHalfBrick
 ret
 drawBricksLayerTwo endp
 
+setRandomBrickColor proc uses ax bx si
+mov si, offset brickColorPalette
+mov bh, 255
+mov bl, 0
+call generateRandomNumber
+mov ax, bx
+mov bx, 2
+div bl
+cmp ah, 0
+ja secondaryColor
+primaryColor:
+mov bl, [si]
+mov brickActiveColor, bl
+jmp exitRandomBrickColor
+secondaryColor:
+mov bl, [si + bx]
+mov brickActiveColor, bl
+jmp exitRandomBrickColor
+exitRandomBrickColor:
+ret
+setRandomBrickColor endp
+
 ; parameters = cx: x-coordinate, dx: y-coordinate
 drawBrick proc uses ax bx cx dx
+call setRandomBrickColor
 mov ah, 0ch
 mov al, brickOutlineColor
 mov bh, brickWidth
@@ -156,7 +242,7 @@ je skipDrawBrick
 cmp bl, 0
 je skipDrawBrick
 call drawRectangle
-mov al, brickColor
+mov al, brickActiveColor
 mov bh, brickWidth
 mov bl, brickHeight
 cmp bh, 3
@@ -190,7 +276,7 @@ cmp bl, 0
 je skipDrawBrick
 push bx
 call drawRectangle
-mov al, brickColor
+mov al, brickActiveColor
 pop bx
 cmp bh, 3
 jb skipDrawBrick
@@ -204,6 +290,27 @@ call drawRectangle
 skipDrawBrick:
 ret
 drawHalfBrick endp
+
+; parameters = cx: x-coordinate, dx: y-coordinate
+drawBall proc uses ax bx cx dx
+mov ah, 0ch
+mov al, ballColor
+push cx
+push dx
+dec cx
+sub dx, 2
+mov bh, 3
+mov bl, 5
+call drawRectangle
+pop dx
+pop cx
+dec dx
+sub cx, 2
+mov bh, 5
+mov bl, 3
+call drawRectangle
+ret
+drawBall endp
 
 ; parameters = al: color, bh: width, bl: height, cx: x-coordinate, dx: y-coordinate
 drawRectangle proc uses ax bx cx dx
