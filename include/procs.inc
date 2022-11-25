@@ -62,6 +62,33 @@ clearScreen proc uses ax bx cx dx
 ret
 clearScreen endp
 
+; parameters = cx: x-coordinate, dx: y-coordinate
+drawPad proc uses ax bx cx dx
+mov ah, 0ch
+mov al, padOutlineColor
+mov bh, padWidth
+mov bl, padHeight
+cmp bh, 0
+je skipDrawPad
+cmp bl, 0
+je skipDrawPad
+call drawRectangle
+mov al, padColor
+mov bh, padWidth
+mov bl, padHeight
+cmp bh, 3
+jb skipDrawPad
+cmp bl, 3
+jb skipDrawPad
+sub bh, 2
+sub bl, 2
+inc cx
+inc dx
+call drawRectangle
+skipDrawPad:
+ret
+drawPad endp
+
 drawLevelOneLayers proc uses ax bx dx
 mov ah, 0
 mov al, brickHeight
