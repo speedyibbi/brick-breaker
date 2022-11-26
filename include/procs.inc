@@ -60,26 +60,23 @@ clearScreen proc uses ax bx cx dx
 ret
 clearScreen endp
 
-; parameters = cx: x-coordinate, dx: y-coordinate
-enablePad proc uses ax bx cx dx
+enablePad proc uses ax bx cx dx si
 call drawPad
+mov si, offset padCoordinates
+mov cx, [si]
+mov dx, [si + 2]
+push ax
 mov ax, windowWidth
 mov bh, 0
 mov bl, padWidth
 sub ax, bx
 mov bx, ax
-CheckKeys:
-mov ah, 00
-cmp ah, 0
-int 16h
-jnz CheckKeys
+pop ax
 cmp ah, 77
 je drawRight
 cmp ah, 75
 je drawLeft
-cmp ah, 1
-je exit
-jmp CheckKeys
+jmp exitPad
 drawRight:
 call clearPad
 mov ah, 0
@@ -87,8 +84,9 @@ mov al, padSpeed
 add cx, ax
 cmp cx, bx
 ja setToMax
+call updatePadCoordinates
 call drawPad
-jmp CheckKeys
+jmp exitPad
 drawLeft:
 call clearPad
 mov ah, 0
@@ -96,25 +94,39 @@ mov al, padSpeed
 sub cx, ax
 cmp cx, bx
 ja setToMin
+call updatePadCoordinates
 call drawPad
-jmp CheckKeys
+jmp exitPad
 setToMax:
 mov cx, bx
+call updatePadCoordinates
 call drawPad
-jmp CheckKeys
+jmp exitPad
 setToMin:
 mov cx, 0
+call updatePadCoordinates
 call drawPad
-jmp CheckKeys
+jmp exitPad
+exitPad:
 ret
 enablePad endp
 
 ; parameters = cx: x-coordinate, dx: y-coordinate
-clearPad proc uses ax bx cx dx
+updatePadCoordinates proc uses cx dx si
+mov si, offset padCoordinates
+mov [si], cx
+mov [si + 2], dx
+ret
+updatePadCoordinates endp
+
+clearPad proc uses ax bx cx dx si
+mov si, offset padCoordinates
 mov ah, 0ch
 mov al, backgroundColor
 mov bh, padWidth
 mov bl, padHeight
+mov cx, [si]
+mov dx, [si + 2]
 cmp bh, 0
 je skipClearPad
 cmp bl, 0
@@ -125,11 +137,63 @@ ret
 clearPad endp
 
 ; parameters = cx: x-coordinate, dx: y-coordinate
-drawPad proc uses ax bx cx dx
+drawBall proc uses ax bx cx dx
+mov ah, 0ch
+mov al, ballOutlineColor
+push cx
+push dx
+sub cx, 2
+sub dx, 4
+mov bh, 5
+mov bl, 9
+call drawRectangle
+pop dx
+pop cx
+push cx
+push dx
+sub dx, 2
+sub cx, 4
+mov bh, 9
+mov bl, 5
+call drawRectangle
+inc cx
+dec dx
+sub bh, 2
+add bl, 2
+call drawRectangle
+mov al, ballColor
+pop dx
+pop cx
+push cx
+push dx
+dec cx
+sub dx, 3
+mov bh, 3
+mov bl, 7
+call drawRectangle
+pop dx
+pop cx
+dec dx
+sub cx, 3
+mov bh, 7
+mov bl, 3
+call drawRectangle
+inc cx
+dec dx
+sub bh, 2
+add bl, 2
+call drawRectangle
+ret
+drawBall endp
+
+drawPad proc uses ax bx cx dx si
+mov si, offset padCoordinates
 mov ah, 0ch
 mov al, padOutlineColor
 mov bh, padWidth
 mov bl, padHeight
+mov cx, [si]
+mov dx, [si + 2]
 cmp bh, 0
 je skipDrawPad
 cmp bl, 0
@@ -290,56 +354,6 @@ call drawRectangle
 skipDrawBrick:
 ret
 drawHalfBrick endp
-
-; parameters = cx: x-coordinate, dx: y-coordinate
-drawBall proc uses ax bx cx dx
-mov ah, 0ch
-mov al, ballOutlineColor
-push cx
-push dx
-sub cx, 2
-sub dx, 4
-mov bh, 5
-mov bl, 9
-call drawRectangle
-pop dx
-pop cx
-push cx
-push dx
-sub dx, 2
-sub cx, 4
-mov bh, 9
-mov bl, 5
-call drawRectangle
-inc cx
-dec dx
-sub bh, 2
-add bl, 2
-call drawRectangle
-mov al, ballColor
-pop dx
-pop cx
-push cx
-push dx
-dec cx
-sub dx, 3
-mov bh, 3
-mov bl, 7
-call drawRectangle
-pop dx
-pop cx
-dec dx
-sub cx, 3
-mov bh, 7
-mov bl, 3
-call drawRectangle
-inc cx
-dec dx
-sub bh, 2
-add bl, 2
-call drawRectangle
-ret
-drawBall endp
 
 ; parameters = al: color, bh: width, bl: height, cx: x-coordinate, dx: y-coordinate
 drawRectangle proc uses ax bx cx dx

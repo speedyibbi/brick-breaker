@@ -15,15 +15,18 @@ main proc
 call setVideoMode
 call setBackgroundColor
 
+initialGameState:
 mov cx, 20
 mov dx, 30
 call drawLevelOneLayers
 mov cx, 160
 mov dx, 150
 call drawBall
-mov cx, 120
-mov dx, 190
+call drawPad
+
+startGameLoop
 call enablePad
+jmp GameLoop
 
 jmp exit
 main endp
