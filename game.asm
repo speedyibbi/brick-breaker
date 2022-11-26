@@ -12,19 +12,26 @@ mov ax, @data
 mov ds, ax
 
 main proc
-call setVideoMode
-call setBackgroundColor
 
-initialGameState:
-mov cx, 20
-mov dx, 30
-call drawLevelOneLayers
-mov cx, 160
-mov dx, 150
-call drawBall
-call drawPad
+setVideoMode
+setBackgroundColor
 
-startGameLoop
+setupLevelOne
+
+mov bh, 0
+mov bl, ballSpeed
+mov cx, 0
+GameLoop:
+cmp cx, 0
+jne skipBall
+call enableBall
+skipBall:
+add cx, bx
+cmp cx, 5000
+jb keys
+mov cx, 0
+keys:
+checkKeys
 call enablePad
 jmp GameLoop
 
