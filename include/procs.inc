@@ -294,20 +294,49 @@ drawHalfBrick endp
 ; parameters = cx: x-coordinate, dx: y-coordinate
 drawBall proc uses ax bx cx dx
 mov ah, 0ch
+mov al, ballOutlineColor
+push cx
+push dx
+sub cx, 2
+sub dx, 4
+mov bh, 5
+mov bl, 9
+call drawRectangle
+pop dx
+pop cx
+push cx
+push dx
+sub dx, 2
+sub cx, 4
+mov bh, 9
+mov bl, 5
+call drawRectangle
+inc cx
+dec dx
+sub bh, 2
+add bl, 2
+call drawRectangle
 mov al, ballColor
+pop dx
+pop cx
 push cx
 push dx
 dec cx
-sub dx, 2
+sub dx, 3
 mov bh, 3
-mov bl, 5
+mov bl, 7
 call drawRectangle
 pop dx
 pop cx
 dec dx
-sub cx, 2
-mov bh, 5
+sub cx, 3
+mov bh, 7
 mov bl, 3
+call drawRectangle
+inc cx
+dec dx
+sub bh, 2
+add bl, 2
 call drawRectangle
 ret
 drawBall endp

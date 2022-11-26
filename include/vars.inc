@@ -2,7 +2,7 @@ videoMode db 13h
 windowWidth dw 320d
 windowHeight dw 200d
 
-backgroundColor db 08h
+backgroundColor db 12h
 pixelColor db 36h
 
 padWidth db 80d
@@ -12,6 +12,7 @@ padColor db 22h
 padOutlineColor db 00h
 
 ballColor db 36h
+ballOutlineColor db 00h
 
 brickWidth db 20d
 brickHeight db 10d
