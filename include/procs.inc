@@ -13,28 +13,145 @@ mov bx, dx
 ret
 generateRandomNumber endp
 
+; return value in bx
+getBallWindowWidthLimit proc uses ax
+mov ax, windowWidth
+mov bh, 0
+mov bl, ballRadius
+sub ax, bx
+mov bx, ax
+ret
+getBallWindowWidthLimit endp
+
+; return value in bx
+getBallWindowHeightLimit proc uses ax
+mov ax, windowHeight
+mov bh, 0
+mov bl, ballRadius
+sub ax, bx
+mov bx, ax
+ret
+getBallWindowHeightLimit endp
+
+; return value in bx
+checkBallScreenBoundaries proc uses ax cx dx
+mov ah, 0
+cmp al, 11
+jne nextCheck1
+mov bh, 0
+mov bl, ballRadius
+cmp dx, bx
+ja skipCheck1
+add al, 10
+skipCheck1:
+call getBallWindowWidthLimit
+cmp cx, bx
+jb exitBallCheck
+inc al
+jmp exitBallCheck
+nextCheck1:
+cmp al, 12
+jne nextCheck2
+mov bh, 0
+mov bl, ballRadius
+cmp dx, bx
+ja skipCheck2
+add al, 10
+skipCheck2:
+cmp cx, bx
+ja exitBallCheck
+dec al
+jmp exitBallCheck
+nextCheck2:
+cmp al, 21
+jne nextCheck3
+call getBallWindowHeightLimit
+cmp dx, bx
+jb skipCheck3
+sub al, 10
+skipCheck3:
+call getBallWindowWidthLimit
+cmp cx, bx
+jb exitBallCheck
+inc al
+jmp exitBallCheck
+nextCheck3:
+cmp al, 22
+jne exitBallCheck
+call getBallWindowHeightLimit
+cmp dx, bx
+jb skipCheck4
+sub al, 10
+skipCheck4:
+mov bh, 0
+mov bl, ballRadius
+cmp cx, bx
+ja exitBallCheck
+dec al
+jmp exitBallCheck
+exitBallCheck:
+mov bx, ax
+ret
+checkBallScreenBoundaries endp
+
 enableBall proc uses ax bx cx dx si
 mov si, offset ballCoordinates
 mov cx, [si]
 mov dx, [si + 2]
 mov ah, 0
 mov al, ballDirection
-cmp al, 10
-je moveBallUp
-cmp al, 20
-je moveBallDown
+mov bx, 0
+cmp al, 11
+je moveBallUpRight
+cmp al, 12
+je moveBallUpLeft
+cmp al, 21
+je moveBallDownRight
+cmp al, 22
+je moveBallDownLeft
 jmp exitBall
-moveBallUp:
+moveBallUpRight:
+call checkBallScreenBoundaries
+cmp al, bl
+jne changeDirection
 call clearBall
+inc cx
 dec dx
 call updateBallCoordinates
 call drawBall
 jmp exitBall
-moveBallDown:
+moveBallUpLeft:
+call checkBallScreenBoundaries
+cmp al, bl
+jne changeDirection
 call clearBall
+dec cx
+dec dx
+call updateBallCoordinates
+call drawBall
+jmp exitBall
+moveBallDownRight:
+call checkBallScreenBoundaries
+cmp al, bl
+jne changeDirection
+call clearBall
+inc cx
 inc dx
 call updateBallCoordinates
 call drawBall
+jmp exitBall
+moveBallDownLeft:
+call checkBallScreenBoundaries
+cmp al, bl
+jne changeDirection
+call clearBall
+dec cx
+inc dx
+call updateBallCoordinates
+call drawBall
+jmp exitBall
+changeDirection:
+mov ballDirection, bl
 jmp exitBall
 exitBall:
 ret

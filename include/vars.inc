@@ -12,11 +12,12 @@ padColor db 22h
 padOutlineColor db 00h
 padCoordinates dw 120d, 190d
 
+ballRadius db 5d
 ballSpeed db 2d
 ballColor db 36h
 ballOutlineColor db 00h
 ballCoordinates dw 160d, 150d
-ballDirection db 20d
+ballDirection db 11d
 ; ball direction format : 00d, 01d, 02d, 10dd, 11d, 12d, 20d, 21d, 22d
 ; first-digit: 0 = no-direction, 1 = up, 2 = down
 ; second-digit: 0 = no-direction, 1 = right, 2 = left
