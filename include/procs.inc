@@ -94,6 +94,58 @@ mov bx, ax
 ret
 checkBallScreenBoundaries endp
 
+; return value in bx
+checkBallBrickCollisions proc uses ax bx cx dx si
+mov si, offset brickCoordinates
+mov bx, 0
+checkBrickXCoordinates1:
+cmp cx, [si + bx]
+jae checkBrickXCoordinates2
+add bx, 4
+cmp bx, (brickLayerCount * levelLayers * 4)
+ja exitCheckBallBrickCollisions
+jmp checkBrickXCoordinates1
+checkBrickXCoordinates2:
+mov ax, [si + bx]
+add al, brickWidth
+cmp cx, ax
+jbe checkBrickYCoordinates1
+add bx, 4
+cmp bx, (brickLayerCount * levelLayers * 4)
+ja exitCheckBallBrickCollisions
+jmp checkBrickXCoordinates1
+checkBrickYCoordinates1:
+add bx, 2
+cmp dx, [si + bx]
+jae checkBrickYCoordinates2
+add bx, 2
+cmp bx, (brickLayerCount * levelLayers * 4)
+ja exitCheckBallBrickCollisions
+jmp checkBrickXCoordinates1
+checkBrickYCoordinates2:
+mov ax, [si + bx]
+add al, brickHeight
+cmp dx, ax
+jbe brickCollision
+add bx, 2
+cmp bx, (brickLayerCount * levelLayers * 4)
+ja exitCheckBallBrickCollisions
+jmp checkBrickXCoordinates1
+
+brickCollision:
+mov si, offset brickCoordinates
+sub bx, 2
+mov cx, [si + bx]
+add bx, 2
+mov dx, [si + bx]
+mov bh, brickWidth
+mov bl, brickHeight
+mov al, 36h
+call drawRectangle
+exitCheckBallBrickCollisions:
+ret
+checkBallBrickCollisions endp
+
 enableBall proc uses ax bx cx dx si
 mov si, offset ballCoordinates
 mov cx, [si]
@@ -114,6 +166,9 @@ moveBallUpRight:
 call checkBallScreenBoundaries
 cmp al, bl
 jne changeDirection
+call checkBallBrickCollisions
+cmp al, bl
+jne changeDirection
 call clearBall
 inc cx
 dec dx
@@ -122,6 +177,9 @@ call drawBall
 jmp exitBall
 moveBallUpLeft:
 call checkBallScreenBoundaries
+cmp al, bl
+jne changeDirection
+call checkBallBrickCollisions
 cmp al, bl
 jne changeDirection
 call clearBall
@@ -134,6 +192,9 @@ moveBallDownRight:
 call checkBallScreenBoundaries
 cmp al, bl
 jne changeDirection
+call checkBallBrickCollisions
+cmp al, bl
+jne changeDirection
 call clearBall
 inc cx
 inc dx
@@ -142,6 +203,9 @@ call drawBall
 jmp exitBall
 moveBallDownLeft:
 call checkBallScreenBoundaries
+cmp al, bl
+jne changeDirection
+call checkBallBrickCollisions
 cmp al, bl
 jne changeDirection
 call clearBall
@@ -351,9 +415,11 @@ drawPad endp
 
 drawLevelOneLayers proc uses ax bx cx dx si
 mov si, offset layerCoordinates
+mov bx, 0
+mov brickCoordinatesIndex, bx
 mov ah, 0
 mov al, brickHeight
-mov bl, levelOneLayers
+mov bl, levelLayers
 mov cx, [si]
 mov dx, [si + 2]
 drawLayers:
@@ -368,43 +434,61 @@ dec bl
 cmp bl, 0
 ja drawLayers
 skipLayer:
+mov bx, 0
+mov brickCoordinatesIndex, bx
 ret
 drawLevelOneLayers endp
 
+; parameters = bx: index, cx: x-coordinate, dx: y-coordinate
+insertBrickCoordinates proc uses bx cx dx si
+mov si, offset brickCoordinates
+mov bx, brickCoordinatesIndex
+mov [si + bx], cx
+add bx, 2
+mov [si + bx], dx
+add bx, 2
+mov brickCoordinatesIndex, bx
+ret
+insertBrickCoordinates endp
+
 ; parameters = cx: x-coordinate, dx: y-coordinate
-drawBricksLayerOne proc uses ax bx cx
+drawBricksLayerOne proc uses ax bx cx dx
 mov ah, 0
 mov al, brickWidth
-mov bl, brickLayerCount
+mov bx, (brickLayerCount * 4)
 drawBricks:
 call drawBrick
+call insertBrickCoordinates
 add cx, ax
-dec bl
-cmp bl, 0
+sub bx, 4
+cmp bx, 0
 ja drawBricks
 ret
 drawBricksLayerOne endp
 
 ; parameters = cx: x-coordinate, dx: y-coordinate
-drawBricksLayerTwo proc uses ax bx cx
+drawBricksLayerTwo proc uses ax bx cx dx
 mov ah, 0
 mov al, brickWidth
 push ax
 mov bl, 2
 div bl
 mov ah, 0
-mov bl, brickLayerCount
-dec bl
+mov bx, (brickLayerCount * 4)
 call drawHalfBrick
+call insertBrickCoordinates
+sub bx, 4
 add cx, ax
 pop ax
 drawBricks:
 call drawBrick
+call insertBrickCoordinates
 add cx, ax
-dec bl
-cmp bl, 0
+sub bx, 4
+cmp bx, 0
 ja drawBricks
 call drawHalfBrick
+call insertBrickCoordinates
 ret
 drawBricksLayerTwo endp
 
