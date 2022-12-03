@@ -95,54 +95,407 @@ ret
 checkBallScreenBoundaries endp
 
 ; return value in bx
-checkBallBrickCollisions proc uses ax bx cx dx si
-mov si, offset brickCoordinates
-mov bx, 0
-checkBrickXCoordinates1:
-cmp cx, [si + bx]
-jae checkBrickXCoordinates2
-add bx, 4
-cmp bx, (brickLayerCount * levelLayers * 4)
-ja exitCheckBallBrickCollisions
-jmp checkBrickXCoordinates1
-checkBrickXCoordinates2:
-mov ax, [si + bx]
-add al, brickWidth
-cmp cx, ax
-jbe checkBrickYCoordinates1
-add bx, 4
-cmp bx, (brickLayerCount * levelLayers * 4)
-ja exitCheckBallBrickCollisions
-jmp checkBrickXCoordinates1
-checkBrickYCoordinates1:
-add bx, 2
-cmp dx, [si + bx]
-jae checkBrickYCoordinates2
-add bx, 2
-cmp bx, (brickLayerCount * levelLayers * 4)
-ja exitCheckBallBrickCollisions
-jmp checkBrickXCoordinates1
-checkBrickYCoordinates2:
-mov ax, [si + bx]
-add al, brickHeight
-cmp dx, ax
-jbe brickCollision
-add bx, 2
-cmp bx, (brickLayerCount * levelLayers * 4)
-ja exitCheckBallBrickCollisions
-jmp checkBrickXCoordinates1
+checkBallPadCollisions proc uses ax cx dx si
+mov si, offset padCoordinates
+push ax
+mov ah, 0
+cmp al, 21
+jne nextCheck
+mov bx, [si]
+.IF cx >= bx
+    mov ah, 0
+    mov al, padWidth
+    add bx, ax
+    .IF cx <= bx
+        mov ah, 0
+        mov al, ballRadius
+        mov bx, [si + 2]
+        sub bx, ax
+        .IF dx >= bx
+            pop ax
+            mov ah, 0
+            mov al, 11
+            jmp exitBallCheckFinal
+        .ENDIF
+    .ENDIF
+.ENDIF
+jmp exitBallCheck
+nextCheck:
+cmp al, 22
+jne exitBallCheck
+mov bx, [si]
+.IF cx >= bx
+    mov ah, 0
+    mov al, padWidth
+    add bx, ax
+    .IF cx <= bx
+        mov ah, 0
+        mov al, ballRadius
+        mov bx, [si + 2]
+        sub bx, ax
+        .IF dx >= bx
+            pop ax
+            mov ah, 0
+            mov al, 12
+            jmp exitBallCheckFinal
+        .ENDIF
+    .ENDIF
+.ENDIF
+jmp exitBallCheck
+exitBallCheck:
+pop ax
+exitBallCheckFinal:
+mov bx, ax
+ret
+checkBallPadCollisions endp
 
-brickCollision:
+; return value in bx
+checkBallBrickEdges proc uses ax cx dx si di
+push bx
+call checkHalfBrick
+.IF bx == 1
+    pop bx
+    push bx
+    mov di, 1
+.ELSE
+    pop bx
+    push bx
+    mov di, 0
+.ENDIF
 mov si, offset brickCoordinates
-sub bx, 2
-mov cx, [si + bx]
+mov ax, 0
+mov al, bl
+mov bl, 4
+mul bl
+mov bx, ax
+mov ax, [si + bx]
+.IF cx >= ax
+    .IF di == 1
+        mov di, ax
+        mov ax, 0
+        mov al, brickWidth
+        mov bx, 0
+        mov bl, 2
+        div bl
+        mov bh, 0
+        mov bl, al
+        mov ax, di
+        add ax, bx
+    .ELSE
+        mov bx, 0
+        mov bl, brickWidth
+        add ax, bx
+    .ENDIF
+    .IF cx <= ax
+        pop bx
+        push bx
+        mov ax, 0
+        mov al, bl
+        mov bl, 4
+        mul bl
+        mov bx, ax
+        add bx, 2
+        mov ax, [si + bx]
+        .IF dx >= ax
+            mov bx, 0
+            mov bl, brickHeight
+            add ax, bx
+            .IF dx <= ax
+                pop bx
+                mov bx, 1
+                jmp exitCheckBallBrickEdges
+            .ENDIF
+        .ENDIF
+    .ENDIF
+.ENDIF
+pop bx
+mov bx, 0
+exitCheckBallBrickEdges:
+ret
+checkBallBrickEdges endp
+
+; return value in bx
+checkHalfBrick proc uses ax si
+mov si, offset halfBricks
+mov ax, bx
+mov bx, 0
+halfBrickLoop:
+cmp ax, [si + bx]
+je exitHalfBrickCheckTrue
 add bx, 2
-mov dx, [si + bx]
-mov bh, brickWidth
-mov bl, brickHeight
-mov al, 36h
-call drawRectangle
-exitCheckBallBrickCollisions:
+cmp bx, (((levelLayers / 2) * 2) * 2)
+jb halfBrickLoop
+exitHalfBrickCheckFalse:
+mov bx, 0
+jmp exitHalfBrickCheck
+exitHalfBrickCheckTrue:
+mov bx, 1
+jmp exitHalfBrickCheck
+exitHalfBrickCheck:
+ret
+checkHalfBrick endp
+
+; return value in bx
+checkBallBrickCollisions proc uses ax cx dx si
+mov si, offset brickCoordinates
+mov ah, 0
+push ax
+mov bx, 0
+push bx
+BrickCollisionLoop:
+cmp al, 11
+je UpRightCollisions
+cmp al, 12
+je UpLeftCollisions
+cmp al, 21
+je DownRightCollisions
+cmp al, 22
+je DownLeftCollisions
+jmp next
+UpRightCollisions:
+mov bx, 0
+mov bl, ballRadius
+dec bx
+add cx, bx
+sub dx, bx
+pop bx
+push bx
+call checkBallBrickEdges
+.IF bx == 1
+    pop bx
+    push bx
+    mov ax, bx
+    mov bl, 4
+    mul bl
+    mov bx, ax
+    mov ax, [si + bx]
+    .IF cx == ax
+        pop bx
+        pop ax
+        inc ax
+        push ax
+        push bx
+    .ENDIF
+    pop bx
+    push bx
+    mov ax, bx
+    mov bl, 4
+    mul bl
+    mov bx, ax
+    add bx, 2
+    mov ax, [si + bx]
+    mov bx, 0
+    mov bl, brickHeight
+    add ax, bx
+    .IF dx == ax
+        pop bx
+        pop ax
+        add ax, 10
+        push ax
+        push bx
+    .ENDIF
+    mov bx, 0
+    mov bl, ballRadius
+    dec bx
+    sub cx, bx
+    add dx, bx
+    pop bx
+    jmp exitBallBrickCollosionCheck
+.ENDIF
+mov bx, 0
+mov bl, ballRadius
+dec bx
+sub cx, bx
+add dx, bx
+pop bx
+pop ax
+push ax
+push bx
+jmp next
+UpLeftCollisions:
+mov bx, 0
+mov bl, ballRadius
+dec bx
+sub cx, bx
+sub dx, bx
+pop bx
+push bx
+call checkBallBrickEdges
+.IF bx == 1
+    pop bx
+    push bx
+    mov ax, bx
+    mov bl, 4
+    mul bl
+    mov bx, ax
+    mov ax, [si + bx]
+    mov bx, 0
+    mov bl, brickWidth
+    add ax, bx
+    .IF cx == ax
+        pop bx
+        pop ax
+        dec ax
+        push ax
+        push bx
+    .ENDIF
+    pop bx
+    push bx
+    mov ax, bx
+    mov bl, 4
+    mul bl
+    mov bx, ax
+    add bx, 2
+    mov ax, [si + bx]
+    mov bx, 0
+    mov bl, brickHeight
+    add ax, bx
+    .IF dx == ax
+        pop bx
+        pop ax
+        add ax, 10
+        push ax
+        push bx
+    .ENDIF
+    mov bx, 0
+    mov bl, ballRadius
+    dec bx
+    add cx, bx
+    add dx, bx
+    pop bx
+    jmp exitBallBrickCollosionCheck
+.ENDIF
+mov bx, 0
+mov bl, ballRadius
+dec bx
+add cx, bx
+add dx, bx
+pop bx
+pop ax
+push ax
+push bx
+jmp next
+DownRightCollisions:
+mov bx, 0
+mov bl, ballRadius
+add cx, bx
+add dx, bx
+pop bx
+push bx
+call checkBallBrickEdges
+.IF bx == 1
+    pop bx
+    push bx
+    mov ax, bx
+    mov bl, 4
+    mul bl
+    mov bx, ax
+    mov ax, [si + bx]
+    .IF cx == ax
+        pop bx
+        pop ax
+        inc ax
+        push ax
+        push bx
+    .ENDIF
+    pop bx
+    push bx
+    mov ax, bx
+    mov bl, 4
+    mul bl
+    mov bx, ax
+    add bx, 2
+    mov ax, [si + bx]
+    .IF dx == ax
+        pop bx
+        pop ax
+        sub ax, 10
+        push ax
+        push bx
+    .ENDIF
+    mov bx, 0
+    mov bl, ballRadius
+    sub cx, bx
+    sub dx, bx
+    pop bx
+    jmp exitBallBrickCollosionCheck
+.ENDIF
+mov bx, 0
+mov bl, ballRadius
+sub cx, bx
+sub dx, bx
+pop bx
+pop ax
+push ax
+push bx
+jmp next
+DownLeftCollisions:
+mov bx, 0
+mov bl, ballRadius
+sub cx, bx
+add dx, bx
+pop bx
+push bx
+call checkBallBrickEdges
+.IF bx == 1
+    pop bx
+    push bx
+    mov ax, bx
+    mov bl, 4
+    mul bl
+    mov bx, ax
+    mov ax, [si + bx]
+    mov bx, 0
+    mov bl, brickWidth
+    add ax, bx
+    .IF cx == ax
+        pop bx
+        pop ax
+        dec ax
+        push ax
+        push bx
+    .ENDIF
+    pop bx
+    push bx
+    mov ax, bx
+    mov bl, 4
+    mul bl
+    mov bx, ax
+    add bx, 2
+    mov ax, [si + bx]
+    .IF dx == ax
+        pop bx
+        pop ax
+        sub ax, 10
+        push ax
+        push bx
+    .ENDIF
+    mov bx, 0
+    mov bl, ballRadius
+    add cx, bx
+    sub dx, bx
+    pop bx
+    jmp exitBallBrickCollosionCheck
+.ENDIF
+mov bx, 0
+mov bl, ballRadius
+add cx, bx
+sub dx, bx
+pop bx
+pop ax
+push ax
+push bx
+jmp next
+next:
+pop bx
+inc bx
+push bx
+cmp bx, ((brickLayerCount * levelLayers) + (levelLayers / 2))
+jb BrickCollisionLoop
+pop bx
+exitBallBrickCollosionCheck:
+pop ax
+mov bx, ax
 ret
 checkBallBrickCollisions endp
 
@@ -192,6 +545,9 @@ moveBallDownRight:
 call checkBallScreenBoundaries
 cmp al, bl
 jne changeDirection
+call checkBallPadCollisions
+cmp al, bl
+jne changeDirection
 call checkBallBrickCollisions
 cmp al, bl
 jne changeDirection
@@ -203,6 +559,9 @@ call drawBall
 jmp exitBall
 moveBallDownLeft:
 call checkBallScreenBoundaries
+cmp al, bl
+jne changeDirection
+call checkBallPadCollisions
 cmp al, bl
 jne changeDirection
 call checkBallBrickCollisions
@@ -413,10 +772,12 @@ skipDrawPad:
 ret
 drawPad endp
 
-drawLevelOneLayers proc uses ax bx cx dx si
+drawLevelOneLayers proc uses ax bx cx dx si di
 mov si, offset layerCoordinates
+mov di, 0
 mov bx, 0
 mov brickCoordinatesIndex, bx
+mov halfBricksIndex, bl
 mov ah, 0
 mov al, brickHeight
 mov bl, levelLayers
@@ -436,6 +797,8 @@ ja drawLayers
 skipLayer:
 mov bx, 0
 mov brickCoordinatesIndex, bx
+mov halfBricksIndex, bl
+mov di, 0
 ret
 drawLevelOneLayers endp
 
@@ -451,6 +814,17 @@ mov brickCoordinatesIndex, bx
 ret
 insertBrickCoordinates endp
 
+; parameters = bx: index, cx: x-coordinate, dx: y-coordinate
+insertHalfBrick proc uses bx si
+mov si, offset halfBricks
+mov bh, 0
+mov bl, halfBricksIndex
+mov [si + bx], di
+add bx, 2
+mov halfBricksIndex, bl
+ret
+insertHalfBrick endp
+
 ; parameters = cx: x-coordinate, dx: y-coordinate
 drawBricksLayerOne proc uses ax bx cx dx
 mov ah, 0
@@ -459,6 +833,7 @@ mov bx, (brickLayerCount * 4)
 drawBricks:
 call drawBrick
 call insertBrickCoordinates
+inc di
 add cx, ax
 sub bx, 4
 cmp bx, 0
@@ -476,19 +851,24 @@ div bl
 mov ah, 0
 mov bx, (brickLayerCount * 4)
 call drawHalfBrick
+call insertHalfBrick
 call insertBrickCoordinates
+inc di
 sub bx, 4
 add cx, ax
 pop ax
 drawBricks:
 call drawBrick
 call insertBrickCoordinates
+inc di
 add cx, ax
 sub bx, 4
 cmp bx, 0
 ja drawBricks
 call drawHalfBrick
+call insertHalfBrick
 call insertBrickCoordinates
+inc di
 ret
 drawBricksLayerTwo endp
 
