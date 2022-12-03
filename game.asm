@@ -12,6 +12,13 @@ mov ax, @data
 mov ds, ax
 
 main proc
+; call setBackgroundColor
+againMenu:
+call setVideoMode
+call menu
+call choice         ;Choosing 1 of the 3 Options given in Menu
+cmp MenuChoice,1
+JZ againMenu
 
 setVideoMode
 setBackgroundColor
@@ -80,6 +87,9 @@ keys:
 checkKeys
 call enablePad
 jmp GameLoop
+
+call NewScreen ;Set Background Again
+call WinScreen
 
 jmp exit
 main endp
