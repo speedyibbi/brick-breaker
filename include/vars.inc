@@ -6,6 +6,9 @@ windowHeight dw 200d
 backgroundColor db 12h
 pixelColor db 36h
 
+HUDSize db 25d
+HUDColor db 22h
+
 padWidth db 80d
 padHeight db 5d
 padSpeed db 5d
@@ -32,8 +35,8 @@ brickColorPalette db 27h, 6fh, 2ah, 72h, 36h
 ; brick color palette format : primary, primary-light, secondary, secondary-light, special
 brickOutlineColor db 00h
 
-levelLayers = 2
-layerCoordinates dw 60d, 30d
+levelLayers = 3
+layerCoordinates dw 60d, 55d
 brickCoordinates dw ((brickLayerCount * levelLayers * 2) + ((levelLayers / 2) * 2)) dup(0)
 brickCoordinatesIndex dw 0
 halfBricks dw ((levelLayers / 2) * 2) dup(0)

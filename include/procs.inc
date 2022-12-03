@@ -1,27 +1,9 @@
-setVideoMode proc uses ax
-mov ah, 00
-mov al, videoMode
-int 10h
-ret
-setVideoMode endp
-
 setVideoModeRules proc uses ax
 mov ah, 00
 mov al, videoModeRules
 int 10h
 ret
 setVideoModeRules endp
-
-setBackgroundColor proc uses ax bx cx dx
-mov ah, 06h
-mov al, 0
-mov bh, backgroundColor
-mov cx, 0
-mov dh, 80
-mov dl, 80
-int 10h
-ret
-setBackgroundColor endp
 
 ; parameters = bh: upper-limit, bl: lower-limit
 ; return value in bx
@@ -65,6 +47,7 @@ cmp al, 11
 jne nextCheck1
 mov bh, 0
 mov bl, ballRadius
+add bl, HUDSize
 cmp dx, bx
 ja skipCheck1
 add al, 10
@@ -79,10 +62,12 @@ cmp al, 12
 jne nextCheck2
 mov bh, 0
 mov bl, ballRadius
+add bl, HUDSize
 cmp dx, bx
 ja skipCheck2
 add al, 10
 skipCheck2:
+sub bl, HUDSize
 cmp cx, bx
 ja exitBallCheck
 dec al
@@ -1223,7 +1208,7 @@ instruction endp
 ShowLeaderBoards proc uses ax bx cx dx si
 
 ;call setVideoModeRules
-call setBackgroundColor ;Set Background Again
+setBackgroundColor ;Set Background Again
 mov si, 0
 mov dh,3    ;X-Cordinates
 mov dl,13    ;Y-Cordinates
