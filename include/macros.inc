@@ -29,6 +29,11 @@ cmp cx, windowWidth
 jb HUDLoopIn
 mov cx, 0
 inc dx
+sub bx, 2
+.IF dx >= bx
+    mov al, HUDFrameColor
+.ENDIF
+add bx, 2
 cmp dx, bx
 jb HUDLoopOut
 mov ax, 0

@@ -8,11 +8,12 @@ pixelColor db 36h
 
 HUDSize db 25d
 HUDColor db 22h
+HUDFrameColor db 26h
 
 padWidth db 80d
 padHeight db 5d
 padSpeed db 5d
-padColor db 22h
+padColor db 1fh
 padOutlineColor db 00h
 padCoordinates dw 120d, 190d
 

@@ -245,6 +245,24 @@ exitHalfBrickCheck:
 ret
 checkHalfBrick endp
 
+; parameters = bx: index, cx: x-coordinate, dx: y-coordinate
+breakBrick proc uses ax bx cx dx si
+mov si, offset brickCoordinates
+mov ax, bx
+mov bh, 0
+mov bl, 4
+mul bl
+mov bx, ax
+mov ax, 0
+mov cx, [si + bx]
+mov [si + bx], ax
+add bx, 2
+mov dx, [si + bx]
+mov [si + bx], ax
+call eraseBrick
+ret
+breakBrick endp
+
 ; return value in bx
 checkBallBrickCollisions proc uses ax cx dx si
 mov si, offset brickCoordinates
@@ -265,7 +283,6 @@ jmp next
 UpRightCollisions:
 mov bx, 0
 mov bl, ballRadius
-dec bx
 add cx, bx
 sub dx, bx
 pop bx
@@ -306,15 +323,14 @@ call checkBallBrickEdges
     .ENDIF
     mov bx, 0
     mov bl, ballRadius
-    dec bx
     sub cx, bx
     add dx, bx
     pop bx
+    call breakBrick
     jmp exitBallBrickCollosionCheck
 .ENDIF
 mov bx, 0
 mov bl, ballRadius
-dec bx
 sub cx, bx
 add dx, bx
 pop bx
@@ -325,7 +341,6 @@ jmp next
 UpLeftCollisions:
 mov bx, 0
 mov bl, ballRadius
-dec bx
 sub cx, bx
 sub dx, bx
 pop bx
@@ -369,15 +384,14 @@ call checkBallBrickEdges
     .ENDIF
     mov bx, 0
     mov bl, ballRadius
-    dec bx
     add cx, bx
     add dx, bx
     pop bx
+    call breakBrick
     jmp exitBallBrickCollosionCheck
 .ENDIF
 mov bx, 0
 mov bl, ballRadius
-dec bx
 add cx, bx
 add dx, bx
 pop bx
@@ -428,6 +442,7 @@ call checkBallBrickEdges
     sub cx, bx
     sub dx, bx
     pop bx
+    call breakBrick
     jmp exitBallBrickCollosionCheck
 .ENDIF
 mov bx, 0
@@ -485,6 +500,7 @@ call checkBallBrickEdges
     add cx, bx
     sub dx, bx
     pop bx
+    call breakBrick
     jmp exitBallBrickCollosionCheck
 .ENDIF
 mov bx, 0
@@ -585,6 +601,19 @@ call drawBall
 jmp exitBall
 changeDirection:
 mov ballDirection, bl
+.IF bl == 11
+    inc cx
+    dec dx
+.ELSEIF bl == 12
+    dec cx
+    dec dx
+.ELSEIF bl == 21
+    inc cx
+    inc dx
+.ELSEIF bl == 22
+    dec cx
+    inc dx
+.ENDIF
 jmp exitBall
 exitBall:
 ret
@@ -903,6 +932,21 @@ jmp exitRandomBrickColor
 exitRandomBrickColor:
 ret
 setRandomBrickColor endp
+
+; parameters = cx: x-coordinate, dx: y-coordinate
+eraseBrick proc uses ax bx
+mov ah, 0ch
+mov al, backgroundColor
+mov bh, brickWidth
+mov bl, brickHeight
+cmp bh, 0
+je skipEraseBrick
+cmp bl, 0
+je skipEraseBrick
+call drawRectangle
+skipEraseBrick:
+ret
+eraseBrick endp
 
 ; parameters = cx: x-coordinate, dx: y-coordinate
 drawBrick proc uses ax bx cx dx
