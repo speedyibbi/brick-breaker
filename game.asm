@@ -25,7 +25,9 @@ setBackgroundColor
 
 enableHUD
 
-setupLevelOne
+; setupLevelOne
+; setupLevelTwo
+setupLevelThree
 
 ; mov si, offset brickCoordinates
 ; mov bx, 0

@@ -62,13 +62,25 @@ endm
 setupLevelTwo macro
 mov al, 2
 call drawLevelLayers
+mov al, 3
+mov ballSpeed, al
+mov al, 40d
+mov padWidth, al
+mov al, 7
+mov padSpeed, al
 call drawBall
 call drawPad
 endm
 
 setupLevelThree macro
-mov al, 3
+mov al, 2
 call drawLevelLayers
+mov al, 4
+mov ballSpeed, al
+mov al, 40d
+mov padWidth, al
+mov al, 10
+mov padSpeed, al
 call drawBall
 call drawPad
 endm
