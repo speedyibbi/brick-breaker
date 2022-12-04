@@ -53,7 +53,22 @@ je exit
 endm
 
 setupLevelOne macro
-call drawLevelOneLayers
+mov al, 1
+call drawLevelLayers
+call drawBall
+call drawPad
+endm
+
+setupLevelTwo macro
+mov al, 2
+call drawLevelLayers
+call drawBall
+call drawPad
+endm
+
+setupLevelThree macro
+mov al, 3
+call drawLevelLayers
 call drawBall
 call drawPad
 endm

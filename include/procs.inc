@@ -246,20 +246,54 @@ ret
 checkHalfBrick endp
 
 ; parameters = bx: index, cx: x-coordinate, dx: y-coordinate
-breakBrick proc uses ax bx cx dx si
+breakBrick proc uses ax bx cx dx si di
 mov si, offset brickCoordinates
-mov ax, bx
-mov bh, 0
-mov bl, 4
-mul bl
-mov bx, ax
-mov ax, 0
-mov cx, [si + bx]
-mov [si + bx], ax
-add bx, 2
-mov dx, [si + bx]
-mov [si + bx], ax
-call eraseBrick
+mov di, offset brickTypes
+mov al, [di + bx]
+.IF al == 4
+.ELSEIF al == 3
+    dec al
+    mov [di + bx], al
+.ELSEIF al == 2
+    dec al
+    mov [di + bx], al
+    mov di, offset brickColorPalette
+    mov ax, bx
+    mov bh, 0
+    mov bl, 4
+    mul bl
+    mov bx, ax
+    mov ax, 0
+    mov cx, [si + bx]
+    add bx, 2
+    mov dx, [si + bx]
+    call getBrickColor
+    mov al, bl
+    call getBrickColorIndex
+    mov bh, 0
+    inc bl
+    mov ah, 0
+    mov al, [di + bx]
+    mov brickActiveColor, al
+    call drawUnrandomizedBrick
+    jmp exitBrickBreak
+.ELSEIF al <= 1
+    dec al
+    mov [di + bx], al
+    mov ax, bx
+    mov bh, 0
+    mov bl, 4
+    mul bl
+    mov bx, ax
+    mov ax, 0
+    mov cx, [si + bx]
+    mov [si + bx], ax
+    add bx, 2
+    mov dx, [si + bx]
+    mov [si + bx], ax
+    call eraseBrick
+.ENDIF
+exitBrickBreak:
 ret
 breakBrick endp
 
@@ -811,8 +845,10 @@ skipDrawPad:
 ret
 drawPad endp
 
-drawLevelOneLayers proc uses ax bx cx dx si di
+; parameters = al: brickType
+drawLevelLayers proc uses ax bx cx dx si di
 mov si, offset layerCoordinates
+call setEveryBrickType
 mov di, 0
 mov bx, 0
 mov brickCoordinatesIndex, bx
@@ -839,7 +875,59 @@ mov brickCoordinatesIndex, bx
 mov halfBricksIndex, bl
 mov di, 0
 ret
-drawLevelOneLayers endp
+drawLevelLayers endp
+
+; parameters = al: color
+; return value in bl
+getBrickColorIndex proc uses ax cx si
+mov si, offset brickColorPalette
+mov bx, 0
+mov ch, 0
+mov cl, brickColorPaletteCount
+brickColorIndexLoop:
+.IF al == [si + bx]
+    jmp exitBrickColorIndex
+.ENDIF
+inc bx
+cmp bx, cx
+jb brickColorIndexLoop
+mov bx, 255
+exitBrickColorIndex:
+ret
+getBrickColorIndex endp
+
+; parameters = cx: x-coordinate, dx: y-coordinate
+; return value in bl
+getBrickColor proc uses ax cx dx
+mov ah, 0dh
+mov bx, 0
+inc cx
+inc dx
+int 10h
+mov bx, 0
+mov bl, al
+ret
+getBrickColor endp
+
+; parameters = al: type, bx: index
+setBrickType proc uses ax bx si
+mov si, offset brickTypes
+mov [si + bx], al
+ret
+setBrickType endp
+
+; parameters = al: type
+setEveryBrickType proc uses ax bx cx dx si
+mov si, offset brickTypes
+mov ah, 0
+mov bx, 0
+brickTypeLoop:
+mov [si + bx], al
+inc bx
+cmp bx, ((brickLayerCount * levelLayers) + ((levelLayers / 2)))
+jb brickTypeLoop
+ret
+setEveryBrickType endp
 
 ; parameters = bx: index, cx: x-coordinate, dx: y-coordinate
 insertBrickCoordinates proc uses bx cx dx si
@@ -947,6 +1035,33 @@ call drawRectangle
 skipEraseBrick:
 ret
 eraseBrick endp
+
+; parameters = cx: x-coordinate, dx: y-coordinate
+drawUnrandomizedBrick proc uses ax bx cx dx
+mov ah, 0ch
+mov al, brickOutlineColor
+mov bh, brickWidth
+mov bl, brickHeight
+cmp bh, 0
+je skipDrawBrick
+cmp bl, 0
+je skipDrawBrick
+call drawRectangle
+mov al, brickActiveColor
+mov bh, brickWidth
+mov bl, brickHeight
+cmp bh, 3
+jb skipDrawBrick
+cmp bl, 3
+jb skipDrawBrick
+sub bh, 2
+sub bl, 2
+inc cx
+inc dx
+call drawRectangle
+skipDrawBrick:
+ret
+drawUnrandomizedBrick endp
 
 ; parameters = cx: x-coordinate, dx: y-coordinate
 drawBrick proc uses ax bx cx dx

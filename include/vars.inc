@@ -32,7 +32,8 @@ brickHeight db 10d
 brickSpecialColor db 36h
 brickLayerCount = 10
 brickActiveColor db 27h
-brickColorPalette db 27h, 6fh, 2ah, 72h, 36h
+brickColorPalette db 27h, 6fh, 2ah, 72h
+brickColorPaletteCount db 4
 ; brick color palette format : primary, primary-light, secondary, secondary-light, special
 brickOutlineColor db 00h
 
@@ -42,6 +43,7 @@ brickCoordinates dw ((brickLayerCount * levelLayers * 2) + ((levelLayers / 2) * 
 brickCoordinatesIndex dw 0
 halfBricks dw ((levelLayers / 2) * 2) dup(0)
 halfBricksIndex db 0
+brickTypes db ((brickLayerCount * levelLayers) + ((levelLayers / 2))) dup(0)
 
 ; Menu Var
 outer db 10
